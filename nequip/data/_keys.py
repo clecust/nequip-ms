@@ -12,6 +12,7 @@ from typing import List, Final
 POSITIONS_KEY: Final[str] = "pos"
 # The [2, n_edge] index tensor giving center -> neighbor relations
 EDGE_INDEX_KEY: Final[str] = "edge_index"
+EDGE_INDEX_LONG_KEY: Final[str] = "edge_index_long"
 # Permutation indices for transposing edges from row to column major order
 EDGE_TRANSPOSE_PERM_KEY: Final[str] = "edge_transpose_perm"
 # A [n_edge, 3] tensor of how many periodic cells each edge crosses in each cell vector
@@ -37,8 +38,10 @@ BASIC_STRUCTURE_KEYS: Final[List[str]] = [
 
 # A [n_edge, 3] tensor of displacement vectors associated to edges
 EDGE_VECTORS_KEY: Final[str] = "edge_vectors"
+EDGE_VECTORS_LONG_KEY: Final[str] = "edge_vectors_long"
 # A [n_edge] tensor of the lengths of EDGE_VECTORS
 EDGE_LENGTH_KEY: Final[str] = "edge_lengths"
+EDGE_LENGTH_LONG_KEY: Final[str] = "edge_lengths_long"
 NORM_LENGTH_KEY: Final[str] = "normed_edge_lengths"
 EDGE_TYPE_KEY: Final[str] = "edge_type_flat"
 

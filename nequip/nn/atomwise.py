@@ -376,3 +376,38 @@ def _format_type_vals(
         raise ValueError(
             f"Don't know how to format vals=`{vals}` for types {type_names} with element_formatter=`{element_formatter}`"
         )
+
+from nequip.nn.dftd import D3CSO_Calculator
+
+class DftCsoLayer(GraphModuleMixin, torch.nn.Module):
+
+    def __init__(
+        self,
+        irreps_in,
+        r_max: float = 3,
+        xc: str = "pbe",
+        atomic_numbers=[1, 6, 8],
+    ):
+        super().__init__()
+        self.dispersion_correction = D3CSO_Calculator(
+            xc=xc,
+            cutoff=r_max,
+            bidirectional=True,
+        )
+        self.field = AtomicDataDict.PER_ATOM_ENERGY_KEY
+        self.irreps_in = irreps_in
+        self.irreps_out = irreps_in
+        self.atomic_numbers = torch.tensor(
+            atomic_numbers, dtype=torch.long, device="cuda"
+        )
+
+    def forward(self, data: AtomicDataDict.Type) -> AtomicDataDict.Type:
+
+        node_disp = self.dispersion_correction(
+            data[AtomicDataDict.EDGE_VECTORS_KEY],
+            data[AtomicDataDict.EDGE_LENGTH_KEY],
+            data[AtomicDataDict.EDGE_INDEX_KEY],
+            self.atomic_numbers[data[AtomicDataDict.ATOM_TYPE_KEY]],
+        )
+        data[self.field] = data[self.field]   + node_disp.unsqueeze(-1)
+        return data

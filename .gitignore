@@ -158,3 +158,5 @@ cython_debug/
 
 **/.claude/settings.local.json
 **/CLAUDE.local.md
+configs/*.pth
+run/*

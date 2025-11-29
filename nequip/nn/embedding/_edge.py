@@ -1,5 +1,6 @@
 # This file is a part of the `nequip` package. Please see LICENSE and README at the root for information on using it.
 import torch
+import torch._dynamo as dynamo
 
 from e3nn.o3._irreps import Irreps
 from e3nn.o3._spherical_harmonics import SphericalHarmonics
@@ -32,9 +33,12 @@ class EdgeLengthNormalizer(GraphModuleMixin, torch.nn.Module):
         edge_type_field: str = AtomicDataDict.EDGE_TYPE_KEY,
         norm_length_field: str = AtomicDataDict.NORM_LENGTH_KEY,
         irreps_in=None,
+        r_mid: float = None,
     ):
         super().__init__()
-
+        if r_mid is not None:
+            r_max = r_mid
+            self.r_mid = r_mid
         self.r_max = float(r_max)
         self.num_types = len(type_names)
         self.edge_type_field = edge_type_field
@@ -170,6 +174,7 @@ class SphericalHarmonicEdgeAttrs(GraphModuleMixin, torch.nn.Module):
         irreps_edge_sh: Union[int, str, Irreps],
         edge_sh_normalization: str = "component",
         edge_sh_normalize: bool = True,
+        r_mid:float=None,
         irreps_in=None,
         out_field: str = AtomicDataDict.EDGE_ATTRS_KEY,
     ):
@@ -189,9 +194,32 @@ class SphericalHarmonicEdgeAttrs(GraphModuleMixin, torch.nn.Module):
         )
         # i.e. `model_dtype`
         self._output_dtype = torch.get_default_dtype()
+        self.r_mid = r_mid            
+    #### 总是报错，实在无法解决，只要后面的截断半径设置正确，多算一些pair，不影响结果的！
+    def _prune_edges(self, data: AtomicDataDict.Type) -> AtomicDataDict.Type:
+        # 这里就是你原来的裁剪逻辑，想怎么切就怎么切
+        edge_index = data[AtomicDataDict.EDGE_INDEX_KEY]
+        edge_length = data[AtomicDataDict.EDGE_LENGTH_KEY]
+        edge_vec = data[AtomicDataDict.EDGE_VECTORS_KEY]
+
+        # 备份 long 版本
+        data[AtomicDataDict.EDGE_INDEX_LONG_KEY] = edge_index.clone()
+        data[AtomicDataDict.EDGE_LENGTH_LONG_KEY] = edge_length.clone()
+        data[AtomicDataDict.EDGE_VECTORS_LONG_KEY] = edge_vec.clone()
+
+        length_flat = edge_length.view(-1)
+        mask = length_flat < self.r_mid  # 依据数据的布尔 mask
+
+        data[AtomicDataDict.EDGE_INDEX_KEY] = edge_index[:, mask]
+        data[AtomicDataDict.EDGE_LENGTH_KEY] = edge_length[mask]
+        data[AtomicDataDict.EDGE_VECTORS_KEY] = edge_vec[mask]
+        return data
 
     def forward(self, data: AtomicDataDict.Type) -> AtomicDataDict.Type:
-        data = with_edge_vectors_(data, with_lengths=False)
+        data = with_edge_vectors_(data, with_lengths=True)
+        # if self.r_mid is not None:
+        #     # 在这里调用“未编译”的裁剪函数
+        #     data = self._prune_edges(data)
         edge_vec = data[AtomicDataDict.EDGE_VECTORS_KEY]
         edge_sh = self.sh(edge_vec)
         data[self.out_field] = edge_sh.to(self._output_dtype)

@@ -6,6 +6,7 @@ from .atomwise import (
     AtomwiseReduce,
     AtomwiseLinear,
     PerTypeScaleShift,
+    DftCsoLayer,
 )
 from .nonlinearities import ShiftedSoftplus
 from .mlp import ScalarMLP, ScalarMLPFunction
@@ -25,6 +26,7 @@ __all__ = [
     "AtomwiseReduce",
     "AtomwiseLinear",
     "PerTypeScaleShift",
+    "DftCsoLayer",
     "ShiftedSoftplus",
     "ScalarMLP",
     "ScalarMLPFunction",

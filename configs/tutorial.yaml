@@ -108,7 +108,7 @@ trainer:
   _target_: lightning.Trainer
   accelerator: gpu
   enable_checkpointing: true
-  max_epochs: 1000
+  max_epochs: 3
   max_time: 03:00:00:00
   log_every_n_steps: 20       # how often to log
 
@@ -216,7 +216,7 @@ training_module:
     # == convnet layers ==
     num_layers: ${num_layers}      # number of interaction blocks, we find 3-5 to work best
     l_max: ${l_max}                # the maximum irrep order (rotation order) for the network's features, l=1 is a good default, l=2 is more accurate but slower
-    parity: true                   # whether to include features with odd mirror parity; often turning parity off gives equally good results but faster networks, so do consider this
+    parity: false                   # whether to include features with odd mirror parity; often turning parity off gives equally good results but faster networks, so do consider this
     num_features: ${num_features}  # the multiplicity of the features, 32 is a good default for accurate network, if you want to be more accurate, go larger, if you want to be faster, go lower
 
     # it is also possible to provide the multiplicity for each irrep, e.g. for l_max=1 and parity=False, the following refers to 5x0e + 2x1o features
