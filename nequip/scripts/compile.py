@@ -163,6 +163,17 @@ def main(args=None):
         action="store_true",
         default=False,
     )
+    # cso
+    parser.add_argument("--a1", help="a1", default=None, type=float)
+    parser.add_argument("--coefficient", help="coefficient", default=None, type=float)
+    parser.add_argument(
+        "--atomic_numbers",
+        help="atomic numbers list (e.g. 1 6 8)",
+        default=[1, 6, 8],
+        type=int,
+        nargs="*",  # 匹配0个或多个参数
+    )  # atomic_numbers=[1,6,8]  --atomic_numbers 1 6 8
+
     args = parser.parse_args(args=args)
 
     set_workflow_state("compile")
@@ -195,6 +206,36 @@ def main(args=None):
         args.model,
         return_data_dict=need_data_from_model,
     )
+
+    # cso
+    if hasattr(model.model.func, "dftcso"):
+        coefficient = model.model.func.dftcso.dispersion_correction.coefficient
+        a1 = model.model.func.dftcso.dispersion_correction.a1
+        atomic_numbers = model.model.func.dftcso.atomic_numbers
+        print(
+            f"orgin: a1={a1},coefficient={coefficient},atomic_numbers={atomic_numbers}"
+        )
+        if args.a1 is not None:
+            model.model.func.dftcso.dispersion_correction.a1 = torch.ones_like(
+                a1
+            ) * float(args.a1)
+        if args.coefficient is not None:
+            model.model.func.dftcso.dispersion_correction.coefficient = (
+                torch.ones_like(coefficient) * float(args.coefficient)
+            )
+        if args.atomic_numbers is not None:
+            atomic_nums_tensor = torch.tensor(
+                args.atomic_numbers, device=atomic_numbers.device,dtype=torch.long
+            )
+            model.model.func.dftcso.atomic_numbers = atomic_nums_tensor
+        coefficient = model.model.func.dftcso.dispersion_correction.coefficient
+        a1 = model.model.func.dftcso.dispersion_correction.a1
+        atomic_numbers = (
+            model.model.func.dftcso.atomic_numbers
+        )
+        print(
+            f" new : a1={a1},coefficient={coefficient},atomic_numbers={atomic_numbers}"
+        )
     if need_data_from_model:
         model, data_from_loaded_model = model
 
