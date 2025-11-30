@@ -491,7 +491,7 @@ def FullNequIPGNNCSOModel(
     # for backwards compatibility of NequIP's bessel encoding
     factor = ApplyFactor(
         in_field=AtomicDataDict.EDGE_EMBEDDING_KEY,
-        factor=(2 * math.pi) / (r_max * r_max),
+        factor=(2 * math.pi) / (r_mid * r_mid),
         irreps_in=bessel_encode.irreps_out,
     )
 
@@ -523,6 +523,7 @@ def FullNequIPGNNCSOModel(
             nonlinearity_type=convnet_nonlinearity_type,
             nonlinearity_scalars=convnet_nonlinearity_scalars,
             nonlinearity_gates=convnet_nonlinearity_gates,
+            r_mid=r_mid,
         )
         prev_irreps_out = current_convnet.irreps_out
         modules.update({f"layer{layer_i}_convnet": current_convnet})

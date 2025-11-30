@@ -41,6 +41,7 @@ class ConvNetLayer(GraphModuleMixin, torch.nn.Module):
         nonlinearity_type: str = "gate",
         nonlinearity_scalars: Dict[int, Callable] = {"e": "silu", "o": "tanh"},
         nonlinearity_gates: Dict[int, Callable] = {"e": "silu", "o": "tanh"},
+        r_mid: float = None,
     ):
         super().__init__()
         # initialization
@@ -138,6 +139,7 @@ class ConvNetLayer(GraphModuleMixin, torch.nn.Module):
         self.conv = convolution(
             irreps_in=self.irreps_in,
             irreps_out=conv_irreps_out,
+            r_mid=r_mid,
             **convolution_kwargs,
         )
 

@@ -31,6 +31,7 @@ class InteractionBlock(GraphModuleMixin, torch.nn.Module):
         is_first_layer: bool = False,
         avg_num_neighbors: Union[float, Dict[str, float]] = None,
         type_names: Sequence[str] = None,
+        r_mid: float = None,
     ) -> None:
         """InteractionBlock.
 
@@ -45,6 +46,7 @@ class InteractionBlock(GraphModuleMixin, torch.nn.Module):
             type_names (List[str]): list of type names
         """
         super().__init__()
+        self.r_mid = r_mid
 
         self._init_irreps(
             irreps_in=irreps_in,
@@ -190,13 +192,30 @@ class InteractionBlock(GraphModuleMixin, torch.nn.Module):
             x = data[AtomicDataDict.NODE_FEATURES_KEY]
 
         # === TP and scatter ===
+        edge_index = data[AtomicDataDict.EDGE_INDEX_KEY]
+        edge_dst = edge_index[0]
+        edge_src = edge_index[1]
+
+        if self.r_mid is not None:
+            mask = data["edge_short_mask"]
+            edge_dst = edge_dst[mask]
+            edge_src = edge_src[mask]
+
         x = self.tp_scatter(
             x=x,
             edge_attr=data[AtomicDataDict.EDGE_ATTRS_KEY],
             edge_weight=self.edge_mlp(data[AtomicDataDict.EDGE_EMBEDDING_KEY]),
-            edge_dst=data[AtomicDataDict.EDGE_INDEX_KEY][0],
-            edge_src=data[AtomicDataDict.EDGE_INDEX_KEY][1],
+            edge_dst=edge_dst,  # s5
+            edge_src=edge_src,
         )[:num_local_nodes]
+
+        # x = self.tp_scatter(
+        #     x=x,
+        #     edge_attr=data[AtomicDataDict.EDGE_ATTRS_KEY],
+        #     edge_weight=self.edge_mlp(data[AtomicDataDict.EDGE_EMBEDDING_KEY]),
+        #     edge_dst=data[AtomicDataDict.EDGE_INDEX_KEY][0],
+        #     edge_src=data[AtomicDataDict.EDGE_INDEX_KEY][1],
+        # )[:num_local_nodes]
 
         x = self.linear_2(x)
 
